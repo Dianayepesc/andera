@@ -1,8 +1,12 @@
-using Microsoft.AspNetCore.HttpOverrides;
 using WebApplication1.Extensions;
+using Microsoft.AspNetCore.HttpOverrides;
+
+
 var builder = WebApplication.CreateBuilder(args);
+
 builder.Services.ConfigureCors();
 builder.Services.ConfigureIISIntegration();
+
 // Add services to the container.
 
 builder.Services.AddControllers();
@@ -14,7 +18,7 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
     app.UseDeveloperExceptionPage();
-else 
+else
     app.UseHsts();
 
 // Configure the HTTP request pipeline.
@@ -34,13 +38,31 @@ app.UseForwardedHeaders(new ForwardedHeadersOptions
 });
 
 app.UseCors("CorsPolicy");
+
 app.UseAuthorization();
 
+//app.Run(async context => {
+//    await context.Response.WriteAsync("Hello from the middleware component.");
+//});
+
+app.Use(async (context, next) => {
+    Console.WriteLine($"Logic before executing the next delegate in the Use method");
+    await next.Invoke();
+    Console.WriteLine($"Logic after executing the next delegate in the Use method");
+});
+
+
+app.Run(async context => {
+    Console.WriteLine($"Writing the response to the client in the Run method");
+    await context.Response.WriteAsync("Hello from the middleware component.");
+});
+
+
 app.MapControllers();
 
-app.Run(async context =>
-{
-    await context.Response.WriteAsync("HELLO from the middleware componet");
-});
-app.MapControllers();
 app.Run();
+
+namespace Microsoft.AspNetCore.Http
+{
+    public delegate Task RequestDelegate(HttpContext context);
+}
